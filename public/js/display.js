@@ -1,30 +1,37 @@
 // นาฬิกา
 function updateDateTime() {
-    const now = new Date();
+    const now = new Date(); // สร้างอ็อบเจกต์ Date เพื่อรับวันและเวลาปัจจุบัน
+
+    // กำหนดรูปแบบวันที่ให้แสดงเป็นแบบภาษาไทย
     const dateOptions = {
         year: "numeric",
         month: "long",
         day: "numeric",
         weekday: "long",
     };
-    const dateString = now.toLocaleDateString("th-TH", dateOptions);
+    const dateString = now.toLocaleDateString("th-TH", dateOptions); // แปลงวันที่เป็นข้อความตามรูปแบบไทย
     const timeString = now.toLocaleTimeString("th-TH", {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-    });
+    }); // แปลงเวลาเป็นข้อความแบบ HH:MM:SS
 
+    // แสดงผลวันที่และเวลาในหน้าเว็บ
     document.getElementById("current-date").textContent = dateString;
     document.getElementById("current-time").textContent = timeString;
 }
+
+// อัปเดตเวลาใหม่ทุก 1 วินาที
 setInterval(updateDateTime, 1000);
-updateDateTime();
+updateDateTime(); // เรียกใช้ทันทีตอนโหลดหน้า
+
+
 
 // ฟังก์ชันสำหรับดึงข้อมูลเซ็นเซอร์
 async function fetchData(limit = 100) {
     try {
-        const response = await fetch(`/get-esp32-data?limit=${limit}`);
-        const data = await response.json();
+        const response = await fetch(`/get-esp32-data?limit=${limit}`); // เรียก API โดยส่งจำนวนข้อมูลที่ต้องการ
+        const data = await response.json(); // แปลงผลลัพธ์เป็น JSON
 
         if (!Array.isArray(data) || data.length === 0) {
             console.log("❌ ไม่มีข้อมูลจากเซ็นเซอร์");
@@ -34,7 +41,7 @@ async function fetchData(limit = 100) {
         // เรียงข้อมูลตามเวลา (เก่าสุด -> ใหม่สุด)
         data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-        // ตัดวินาทีออกจากเวลา
+        // สร้าง label สำหรับกราฟจากเวลา (ตัดวินาทีออก)
         const labels = data.map((item) =>
             new Date(item.created_at).toLocaleTimeString("th-TH", {
                 hour: "2-digit",
@@ -42,15 +49,19 @@ async function fetchData(limit = 100) {
             })
         );
 
+        // แยกข้อมูลแต่ละชนิดออกมา
         const temperatures = data.map((item) => item.temperature);
         const humidities = data.map((item) => item.humidity);
         const lightIntensities = data.map((item) => item.LightIntensity);
         const weights = data.map((item) => item.weight);
 
+        // อัปเดตกราฟแต่ละตัว
         updateChart(tempChart, labels, temperatures);
         updateChart(humidityChart, labels, humidities);
         updateChart(lightChart, labels, lightIntensities);
         updateChart(weightChart, labels, weights);
+
+        // อัปเดตรวมกราฟทั้งหมด
         updateAllStatusChart(
             labels,
             temperatures,
@@ -63,12 +74,16 @@ async function fetchData(limit = 100) {
     }
 }
 
+
+
 // ฟังก์ชันอัปเดตกราฟ
 function updateChart(chart, labels, data) {
-    chart.data.labels = labels;
-    chart.data.datasets[0].data = data;
-    chart.update();
+    chart.data.labels = labels;         // อัปเดต label บนแกน X
+    chart.data.datasets[0].data = data; // อัปเดตข้อมูลในชุดกราฟ
+    chart.update();                     // สั่งให้กราฟรีเฟรชข้อมูล
 }
+
+
 
 // อัปเดตกราฟทั้งหมด
 const updateAllStatusChart = (
@@ -78,28 +93,30 @@ const updateAllStatusChart = (
     lightIntensities,
     weights
 ) => {
-    allStatusChart.data.labels = labels;
+    allStatusChart.data.labels = labels;              // แกน X
     allStatusChart.data.datasets[0].data = temperatures;
     allStatusChart.data.datasets[1].data = humidities;
     allStatusChart.data.datasets[2].data = lightIntensities;
     allStatusChart.data.datasets[3].data = weights;
-    allStatusChart.update();
+    allStatusChart.update();                          // รีเฟรชกราฟ
 };
+
+
 
 // ฟังก์ชันสร้างกราฟ
 const createChart = (id, label, color) => {
     return new Chart(document.getElementById(id).getContext("2d"), {
-        type: "line",
+        type: "line", // กราฟเส้น
         data: {
-            labels: [],
+            labels: [], // เวลาบนแกน X
             datasets: [
                 {
                     label,
                     data: [],
-                    borderColor: color,
+                    borderColor: color, // สีเส้น
                     fill: true,
-                    tension: 0.3, // เพิ่มความโค้งของเส้นกราฟ
-                    pointRadius: 1,
+                    tension: 0.3, // ความโค้งของเส้น
+                    pointRadius: 1, // ขนาดจุด
                 },
             ],
         },
@@ -118,6 +135,8 @@ const createChart = (id, label, color) => {
         },
     });
 };
+
+
 
 // สร้างกราฟแต่ละตัว
 const tempChart = createChart("tempChart", "อุณหภูมิ (°C)", "red");
@@ -194,23 +213,23 @@ const allStatusChart = new Chart(
                     grid: { drawOnChartArea: false },
                 },
                 "y-light": {
-                    type: "logarithmic", // ใช้สเกลลอการิทึม
+                    type: "logarithmic", // ใช้สเกล log เพราะค่าความเข้มแสงเปลี่ยนแปลงมาก
                     position: "left",
                     title: { display: true, text: "ความเข้มแสง (W/m2)" },
-                    min: 1, // ห้ามใช้ 0 กับ logarithmic
-                    max: 100000, // ปรับตามค่าสูงสุดที่คาดการณ์
+                    min: 1,
+                    max: 100000,
                     grid: { drawOnChartArea: false },
                 },
                 "y-weight": {
-                    type: "logarithmic", // ใช้สเกลลอการิทึม
+                    type: "logarithmic", // ใช้สเกล log เช่นกัน
                     position: "right",
                     title: { display: true, text: "น้ำหนัก (g)" },
                     min: 0,
-                    max: 2000, // ปรับตามค่าสูงสุดที่คาดการณ์
+                    max: 2000,
                     grid: { drawOnChartArea: false },
                     ticks: {
                         callback: function (value) {
-                            return value.toFixed(2) + " g";
+                            return value.toFixed(2) + " g"; // แสดงน้ำหนักเป็นทศนิยม
                         },
                     },
                 },
@@ -238,12 +257,16 @@ const allStatusChart = new Chart(
     }
 );
 
+
+
 // ฟังก์ชันเมื่อเปลี่ยนช่วงเวลา
 document.getElementById("timeRange").addEventListener("change", function () {
     const selectedValue = this.value;
     console.log(`📡 ดึงข้อมูล ${selectedValue} ค่า`);
-    fetchData(selectedValue);
+    fetchData(selectedValue); // ดึงข้อมูลใหม่ตามจำนวนที่เลือก
 });
+
+
 
 // อัปเดตข้อมูลทุก 5 วินาที (ค่าเริ่มต้นใช้ 100 ค่า)
 setInterval(() => {
@@ -251,5 +274,7 @@ setInterval(() => {
     fetchData(selectedValue);
 }, 5000);
 
-// โหลดข้อมูลครั้งแรก
+
+
+// โหลดข้อมูล 100 ค่าเริ่มต้นทันทีเมื่อเปิดหน้าเว็บ
 fetchData(100);

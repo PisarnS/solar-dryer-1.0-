@@ -1,12 +1,14 @@
-@extends('layout')
+@extends('layout'){{-- ใช้ layout หลัก --}}
 @section('title')
-    หน้าแรก
+    ประวัติย้อนหลัง {{-- กำหนดชื่อหน้า --}}
 @endsection
 @section('content')
-    <div class="contianer mt-3 w-100">
+    <div class="contianer mt-3 w-100"> {{-- กล่องครอบเนื้อหา --}}
 
+        {{-- แถบนำทาง (breadcrumb/nav) สำหรับย้อนกลับ --}}
         <ul class="nav border border-1 shadow-sm rounded-3 fs-3 mb-3 d-flex align-items-center">
             <li class="nav-item">
+                {{-- ปุ่มย้อนกลับไปหน้าหลัก --}}
                 <a class="nav-link active" aria-current="page" href="{{ route('display') }}">
                     <i class="bi bi-arrow-left-circle-fill text-dark"></i>
                 </a>
@@ -16,6 +18,7 @@
             </li>
         </ul>
 
+        {{-- แบบฟอร์มเลือกวันย้อนหลัง --}}
         <form action="" class="shadow-sm mb-3 border rounded p-2">
             <div class="row align-items-end">
                 <div class="col-md-6">
@@ -27,18 +30,10 @@
                         <option value="3">สามวันที่แล้ว</option>
                     </select>
                 </div>
-                {{-- <div class="col-md-6">
-                    <label for="historyTimeRange" class="form-label">เลือกช่วงเวลา:</label>
-                    <select id="historyTimeRange" class="form-select">
-                        <option value="30">30 นาที</option>
-                        <option value="60">1 ชั่วโมง</option>
-                        <option value="120">2 ชั่วโมง</option>
-                        <option value="360">6 ชั่วโมง</option>
-                    </select>
-                </div> --}}
             </div>
         </form>
 
+        {{-- กราฟแสดงน้ำหนัก --}}
         <div class="card mb-3 shadow-sm">
             <div class="card-header">
                 <div class="row p-2">
@@ -50,12 +45,15 @@
             </div>
             <div class="card-body">
                 <div class="w-100 ">
+                    {{-- พื้นที่วาดกราฟแบบ responsive --}}
                     <div class="position-relative" style="aspect-ratio: 16/6;">
                         <canvas id="weightChart" class="position-absolute top-0 start-0 w-100 h-100"></canvas>
                     </div>
                 </div>
             </div>
         </div>
+
+        {{-- กราฟแสดงอุณหภูมิ --}}
         <div class="card mb-3 shadow-sm">
             <div class="card-header">
                 <div class="row p-2">
@@ -73,6 +71,8 @@
                 </div>
             </div>
         </div>
+
+        {{-- กราฟแสดงความชื้นสัมพัทธ์ --}}
         <div class="card mb-3 shadow-sm">
             <div class="card-header">
                 <div class="row p-2">
@@ -90,6 +90,8 @@
                 </div>
             </div>
         </div>
+
+        {{-- กราฟแสดงความเข้มแสง --}}
         <div class="card mb-3 shadow-sm">
             <div class="card-header">
                 <div class="row p-2">
@@ -118,7 +120,8 @@
             light: @json($light)
         };
     </script>
-    <!-- โหลดไฟล์ display.js -->
+
+    {{-- โหลด JavaScript สำหรับวาดกราฟ --}}
     <script src="{{ asset('js/history.js') }}"></script>
 @endsection
 

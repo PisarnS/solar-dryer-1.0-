@@ -1,9 +1,11 @@
-@extends('layout')
+@extends('layout') {{-- ใช้ layout หลัก --}}
 @section('title')
-    หน้าแสดงผล
+    หน้าแสดงผล {{-- ชื่อหน้าจะแสดงใน tag <title> --}}
 @endsection
 @section('content')
-    <div class="container mt-3 w-100">
+    <div class="container mt-3 w-100"> {{-- กล่องเนื้อหา --}}
+
+        {{-- แถบนำทางย้อนกลับ --}}
         <ul class="nav border border-1 shadow-sm rounded-3 fs-3 mb-3 d-flex align-items-center">
             <li class="nav-item">
                 <a class="nav-link active" aria-current="page" href="{{ route('welcome') }}">
@@ -14,6 +16,8 @@
                 <p class="mb-0">หน้าแสดงการทำงาน</p>
             </li>
         </ul>
+
+        {{-- กราฟสถานะโดยรวม --}}
         <div>
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
@@ -30,8 +34,11 @@
                 </div>
             </div>
         </div>
+
+        {{-- กราฟน้ำหนัก + ควบคุมการทำงาน --}}
         <div class="row row-cols-1 row-cols-md-2 g-2 mt-2">
             <div class="col">
+                {{-- กราฟน้ำหนักแยกต่างหาก --}}
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
                         น้ำหนัก
@@ -39,17 +46,18 @@
                         <div class="w-100">
                             <div class="position-relative" style="aspect-ratio: 16/10;">
                                 <canvas id="weightChart"
-                                height="100"
-                                {{-- class="position-absolute top-0 start-0 w-100 h-100" --}}
-                                ></canvas>
+                                height="100"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col">{{-- ควบการทำงาน --}}
+
+            <div class="col">
+                {{-- ส่วนควบคุมระบบ --}}
                 <div class="card h-100 shadow-sm p-2">
                     <div class="card-body bg-primary border rounded mb-3">
+                        {{-- แสดงวันที่และเวลา --}}
                         <div class="text-strat">
                             <div class="fw-bold text-light fs-5">
                                 <i class="bi bi-calendar3 text-light"></i> <span id="current-date"></span>
@@ -59,6 +67,8 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- แสดงสถานะการทำงาน --}}
                     <div class="row mb-2">
                         <div class="col text-start">
                             <span>สถานะการทำงาน</span>
@@ -67,6 +77,8 @@
                             <span>กำลังทำงาน</span>
                         </div>
                     </div>
+
+                    {{-- สวิตช์เปิดปิดระบบ --}}
                     <div class="row mb-2">
                         <div class="col text-start">
                             <label class="form-label">เปิดปิดการทำงาน</label>
@@ -78,7 +90,8 @@
                             </div>
                         </div>
                     </div>
-                    {{-- ระยะเวลาแสดงผล --}}
+
+                    {{-- เลือกช่วงเวลาที่จะแสดงผล --}}
                     <div class="mb-3">
                         <label for="timeRange" class="form-label" onchange="">เลือกช่วงเวลา:</label>
                         <select id="timeRange" class="form-select">
@@ -87,15 +100,18 @@
                             <option value="120">2 ชั่วโมง</option>
                             <option value="360">6 ชั่วโมง</option>
                         </select>
-                    </div>                    
+                    </div>
+                    {{-- ปุ่มดาวน์โหลดและไปยังหน้าประวัติ --}}                   
                     <div class="btn-group mt-2" role="group" aria-label="Basic radio toggle button group">
                         <a href="{{ route('download-csv') }}" class="btn btn-primary">บันทึก CSV</a>
                         <a href="{{ route('history') }}" type="button" class="btn btn-primary">ข้อมูลย้อนหลัง</a>
-                        {{-- <a href="{{ route('setting') }}" type="button" class="btn btn-primary">การตั้งค่า</a> --}}
+                        <a href="{{ route('setting') }}" type="button" class="btn btn-primary">การตั้งค่า</a>
                     </div>
                 </div>
             </div>
         </div>
+
+        {{-- กราฟอุณหภูมิ --}}
         <div class="row row-cols-1 row-cols-md-3 g-2 mt-2">
             <div class="col">
                 <div class="card h-100 shadow-sm">
@@ -105,14 +121,14 @@
                         <div class="w-100">
                             <div class="position-relative" style="aspect-ratio: 16/6;">
                                 <canvas id="tempChart" 
-                                height="100"
-                                {{-- class="position-absolute top-0 start-0 w-100 h-100" --}}
-                                ></canvas>
+                                height="100"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {{-- กราฟความชื้น --}}
             <div class="col">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
@@ -126,6 +142,8 @@
                     </div>
                 </div>
             </div>
+
+            {{-- กราฟความเข้มแสง --}}
             <div class="col">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body">
