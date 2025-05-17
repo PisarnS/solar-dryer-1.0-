@@ -1,0 +1,146 @@
+; #include <WiFi.h>                // 📶 ไลบรารีสำหรับการเชื่อมต่อ WiFi
+; #include <HTTPClient.h>          // 🌐 ไลบรารีสำหรับส่ง HTTP requests
+; #include <ArduinoJson.h>         // 📦 ไลบรารีจัดการ JSON
+; #include <DHT.h>                 // 🌡️ ไลบรารีสำหรับ DHT เซ็นเซอร์
+; #include "HX711.h"               // ⚖️ ไลบรารีสำหรับ load cell (HX711)
+
+; // 🔹 กำหนดพินของเซ็นเซอร์
+; #define DHTPIN1 26               // พินของ DHT ตัวที่ 1
+; #define DHTPIN2 25               // พินของ DHT ตัวที่ 2
+; #define DHTTYPE DHT21            // ประเภทของ DHT คือ DHT21
+
+; #define DOUT_PIN 4               // พิน DOUT ของ HX711
+; #define SCK_PIN  2               // พิน SCK ของ HX711 
+
+; // 🔧 ประกาศออบเจกต์ของเซ็นเซอร์
+; DHT dht1(DHTPIN1, DHTTYPE);
+; DHT dht2(DHTPIN2, DHTTYPE);
+; HX711 scale(DOUT_PIN, SCK_PIN); 
+
+; // 🌐 กำหนดค่า WiFi SSID และ Password 
+; const char* ssid = "OPPOA15";         
+; const char* password = "11568900";    
+
+; // 🌍 URL สำหรับส่งข้อมูลไปยัง Server (เช่น Node.js API)
+; const char* serverName = "http://192.168.43.92:3000/api/data";
+
+; #define SAMPLE_COUNT 10         // 📊 จำนวนรอบที่ต้องการเก็บข้อมูลก่อนส่ง
+
+; // 📦 ตัวแปรเก็บค่าอุณหภูมิและความชื้นชั่วคราว
+; float tempData[SAMPLE_COUNT];  
+; float humData[SAMPLE_COUNT];   
+; int sampleIndex = 0;            // ตัวนับรอบ
+
+; void setup() {
+;     Serial.begin(115200);       // เริ่ม Serial Monitor
+;     dht1.begin();               // เริ่ม DHT1
+;     dht2.begin();               // เริ่ม DHT2
+
+;     scale.set_scale(56.4);      // ตั้งค่าสัดส่วน load cell (ต้องปรับให้เหมาะสมกับเซ็นเซอร์จริง)
+;     scale.tare();               // รีเซ็ตค่าน้ำหนักให้เป็นศูนย์
+
+;     // 🔌 เชื่อมต่อ WiFi
+;     WiFi.begin(ssid, password);
+;     while (WiFi.status() != WL_CONNECTED) {
+;         delay(1000);
+;         Serial.println("กำลังเชื่อมต่อ WiFi...");
+;     }
+;     Serial.println("เชื่อมต่อ WiFi สำเร็จ!");
+; }
+
+; void loop() {
+;     // 🧪 อ่านค่าอุณหภูมิและความชื้นจาก DHT ทั้งสองตัว
+;     float humidity1 = dht1.readHumidity();
+;     float temperature1 = dht1.readTemperature();
+;     float humidity2 = dht2.readHumidity();
+;     float temperature2 = dht2.readTemperature();
+
+;     // ❌ ตรวจสอบข้อผิดพลาด
+;     if (isnan(humidity1) || isnan(temperature1) || isnan(humidity2) || isnan(temperature2)) {
+;         Serial.println("เกิดข้อผิดพลาดในการอ่านค่าจาก DHT21");
+;         return;
+;     }
+
+;     // 🧮 คำนวณค่าเฉลี่ยของอุณหภูมิและความชื้น
+;     float avgTemperature = (temperature1 + temperature2) / 2.0;
+;     float avgHumidity = (humidity1 + humidity2) / 2.0;
+
+;     // 🔍 แสดงข้อมูลใน Serial Monitor
+;     Serial.println("📥 ข้อมูลที่อ่านได้จากเซ็นเซอร์:");
+;     Serial.print("🌡️ อุณหภูมิ 1: "); Serial.print(temperature1); Serial.println(" °C");
+;     Serial.print("🌡️ อุณหภูมิ 2: "); Serial.print(temperature2); Serial.println(" °C");
+;     Serial.print("💧 ความชื้น 1: "); Serial.print(humidity1); Serial.println(" %");
+;     Serial.print("💧 ความชื้น 2: "); Serial.print(humidity2); Serial.println(" %");
+;     Serial.print("📊 อุณหภูมิเฉลี่ย: "); Serial.print(avgTemperature); Serial.println(" °C");
+;     Serial.print("📊 ความชื้นเฉลี่ย: "); Serial.print(avgHumidity); Serial.println(" %");
+
+;     float weight = abs(scale.get_units(5));  // ⚖️ อ่านค่าน้ำหนักเฉลี่ยจาก load cell
+;     Serial.print("⚖️ ค่าน้ำหนัก (load cell): ");
+;     Serial.print(weight);
+;     Serial.println(" กรัม (โดยประมาณ)");
+
+;     // 💾 เก็บข้อมูลลงอาร์เรย์
+;     tempData[sampleIndex] = avgTemperature;
+;     humData[sampleIndex] = avgHumidity;
+    
+;     sampleIndex++;  // เพิ่มรอบ
+
+;     Serial.print("📌 เก็บค่าครั้งที่: ");
+;     Serial.println(sampleIndex);
+
+;     // 📤 เมื่อเก็บครบจำนวนที่กำหนดแล้ว ให้คำนวณค่าเฉลี่ยและส่งไปยัง Server
+;     if (sampleIndex >= SAMPLE_COUNT) {
+;         float finalTemp = calculateAverage(tempData, SAMPLE_COUNT);
+;         float finalHum = calculateAverage(humData, SAMPLE_COUNT);
+;         float weight = abs(scale.get_units(5));  // ✅ อ่านค่าดิบของ Load Cell
+
+;         sendDataToServer(finalTemp, finalHum, weight);  // 📡 ส่งข้อมูล
+        
+;         sampleIndex = 0;  // รีเซ็ตตัวนับ 
+;     }
+
+;     Serial.println("--------------------------");
+;     delay(6000);  // ⏱️ รอ 6 วินาที (10 ครั้ง = 60 วินาที)
+; }
+
+; // 📘 ฟังก์ชันคำนวณค่าเฉลี่ย
+; float calculateAverage(float data[], int size) {
+;     float sum = 0;
+;     for (int i = 0; i < size; i++) {
+;         sum += data[i];
+;     }
+;     return sum / size;
+; }
+
+; // 🌐 ฟังก์ชันส่งข้อมูลไปยัง Server ผ่าน HTTP POST
+; void sendDataToServer(float temperature, float humidity, float weight) {
+;     if (WiFi.status() == WL_CONNECTED) {
+;         HTTPClient http;
+
+;         http.begin(serverName);                         // เริ่มเชื่อมต่อกับ API
+;         http.addHeader("Content-Type", "application/json");  // กำหนด Content-Type เป็น JSON
+;         http.setTimeout(5000);                          // ตั้ง timeout 5 วินาที 
+
+;         StaticJsonDocument<200> doc;                    // สร้าง JSON document
+;         doc["temperature"] = temperature;
+;         doc["humidity"] = humidity;
+;         doc["LightIntensity"] = 300;                    // 🌞 ความเข้มแสง (ค่าคงที่ไว้ทดสอบ)
+;         doc["weight"] = weight;
+
+;         String jsonPayload;
+;         serializeJson(doc, jsonPayload);                // แปลง JSON เป็น string
+
+;         int httpResponseCode = http.POST(jsonPayload);  // ส่ง POST request
+
+;         // 📩 ตรวจสอบผลการส่ง
+;         if (httpResponseCode > 0) {
+;             String response = http.getString();
+;             Serial.println("Response: " + response);
+;         } else {
+;             Serial.print("Error in POST request: ");
+;             Serial.println(http.errorToString(httpResponseCode));
+;         }
+
+;         http.end();  // ยกเลิกการเชื่อมต่อ
+;     }
+; }
